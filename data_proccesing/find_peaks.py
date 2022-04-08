@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
 from scipy.signal import argrelextrema
 import numpy as np
-from data_preprocess import read_data, split_data_by_slices, smooth
+from data_preprocess import *
+from peak import Peak
+from extrema import Extrema
 
 
 def find_extrema(data):
@@ -14,54 +16,70 @@ def find_extrema(data):
     return maximums[0], minimums[0]
 
 
-class Extrema:
-    def __init__(self, x, y, clazz):
-        self.x = x
-        self.y = y
-        self.clazz = clazz
-
-
-class Peak:
-    def __init__(self, left_min_extrema, max_extrema, right_min_extrema):
-        self.left_min_extrema = left_min_extrema
-        self.max_extrema = max_extrema
-        self.right_min_extrema = right_min_extrema
-
-    def __repr__(self):
-        return f"({self.left_min_extrema.x}, {self.left_min_extrema.y}) ({self.max_extrema.x}, {self.max_extrema.y}) ({self.right_min_extrema.x}, {self.right_min_extrema.y})"
-
-    def is_good(self):
-        return abs(self.left_min_extrema.y - self.max_extrema.y) > 100
-
-
 if __name__ == "__main__":
-    gras_data = smooth(read_data("../gras_data/0_MN_E_left.dat")[:200])
-    gras_data = np.diff(gras_data)
+    # gras_data = smooth(read_data("../gras_data/0_MN_E_left.dat")[:4400])
+    # gras_data = norma(smooth(read_data("../gras_data/vm.txt")[:200]))
+    gras_data = smooth(read_hdf5("../bio_data/bio_E_PLT_21cms_40Hz_2pedal_0.1step.hdf5")[0])[:]
+    print(len(gras_data))
+    # print(list(gras_data))
+    # gras_data = np.diff(gras_data)
     ids_of_maxs, ids_of_mins = find_extrema(gras_data)
     maxs_elems, mins_elems = np.take(gras_data, ids_of_maxs), np.take(gras_data, ids_of_mins)
 
     extrema_arr = []
-    for i in range(len(maxs_elems)):
-        extrema_arr.append(Extrema(ids_of_maxs[i], maxs_elems[i], "max"))
+
+    print(len(ids_of_maxs), len(maxs_elems))
+    print(len(ids_of_mins), len(mins_elems))
+
+    for i in range(len(mins_elems)):
         extrema_arr.append(Extrema(ids_of_mins[i], mins_elems[i], "min"))
 
+    for i in range(len(maxs_elems)):
+        extrema_arr.append(Extrema(ids_of_maxs[i], maxs_elems[i], "max"))
+
     extrema_arr.sort(key=lambda peak: peak.x)
+
+    # for peak in extrema_arr:
+    #     plt.scatter(x=peak.x, y=peak.y)
 
     peaks_arr = []
 
     i = 0
     while i < len(extrema_arr) - 2:
         peak = Peak(extrema_arr[i], extrema_arr[i + 1], extrema_arr[i + 2])
-        if peak.is_good():
+        if peak.is_good(0.2, 0):
             peaks_arr.append(peak)
         # peaks_arr.append(Peak(extrema_arr[i], extrema_arr[i + 1], extrema_arr[i + 2]))
         i += 2
 
-    for peak in peaks_arr:
+    for i, peak in enumerate(peaks_arr):
         print(peak)
-        plt.scatter(x=peak.left_min_extrema.x, y=peak.left_min_extrema.y, color="r")
-        plt.scatter(x=peak.max_extrema.x, y=peak.max_extrema.y, color="b")
-        plt.scatter(x=peak.right_min_extrema.x, y=peak.right_min_extrema.y, color="r")
+        if peak.is_good(0, 0):
+            print(peak)
+            plt.scatter(x=peak.left_min_extrema.x, y=peak.left_min_extrema.y, color="r")
+            plt.scatter(x=peak.max_extrema.x, y=peak.max_extrema.y, color="b")
+            plt.scatter(x=peak.right_min_extrema.x, y=peak.right_min_extrema.y, color="r")
+
+            # if i == 1:
+            #     plt.plot([peak.left_min_extrema.x, peak.left_min_extrema.x],
+            #              [peak.max_extrema.y - 0.1, peak.left_min_extrema.y + 0.1], color="black")
+            #
+            #     plt.plot([peak.right_min_extrema.x, peak.right_min_extrema.x],
+            #              [peak.left_min_extrema.y + 0.1, peak.max_extrema.y - 0.1], color="black")
+            #
+            #     plt.plot([peak.left_min_extrema.x, peak.right_min_extrema.x],
+            #              [peak.max_extrema.y - 0.1, peak.max_extrema.y - 0.1], color="black")
+            #
+            #     plt.plot([peak.left_min_extrema.x, peak.right_min_extrema.x],
+            #              [peak.left_min_extrema.y + 0.1, peak.left_min_extrema.y + 0.1], color="black")
+            #
+            # else:
+            #     plt.plot([peak.left_min_extrema.x, peak.left_min_extrema.x], [peak.max_extrema.y - 0.1, peak.right_min_extrema.y + 0.1], color="black")
+            #     plt.plot([peak.right_min_extrema.x, peak.right_min_extrema.x], [peak.max_extrema.y - 0.1, peak.right_min_extrema.y + 0.1], color="black")
+            #
+            #     plt.plot([peak.left_min_extrema.x, peak.right_min_extrema.x], [peak.right_min_extrema.y + 0.1, peak.right_min_extrema.y + 0.1], color="black")
+            #     plt.plot([peak.left_min_extrema.x, peak.right_min_extrema.x], [peak.max_extrema.y - 0.1, peak.max_extrema.y - 0.1], color="black")
 
     plt.plot(gras_data)
+    # plt.savefig("peaks.png", dpi=1000)
     plt.show()
