@@ -27,7 +27,7 @@ def norma(data):
     maximum = max(data)
     minimum = min(data)
     # return preprocessing.normalize(data.reshape(-1, 1))
-    return np.array(list(map(lambda x: 2 * ((x - minimum) / (maximum - minimum)), data)))
+    return np.array(list(map(lambda x: ((x - minimum) / (maximum - minimum)), data)))
 
 
 def split_data_by_slices(data, num_of_slice):
