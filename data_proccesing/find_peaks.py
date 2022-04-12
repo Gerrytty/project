@@ -31,22 +31,32 @@ def find_peaks(data):
     extrema_arr.sort(key=lambda peak: peak.x)
 
     if extrema_arr[0].clazz == "min":
-        extrema_arr.insert(0, Extrema(0, gras_data[0], "max"))
+        extrema_arr.insert(0, Extrema(0, data[0], "max"))
 
     if extrema_arr[-1].clazz == "min":
-        extrema_arr.append(Extrema(len(gras_data), gras_data[-1], "max"))
+        extrema_arr.append(Extrema(len(data), data[-1], "max"))
 
     peaks_arr = []
 
     for i, extrema in enumerate(extrema_arr):
         if extrema.clazz == "min":
-            peaks_arr.append(Peak(extrema_arr[i - 1], extrema, extrema_arr[i + 1]))
+            peak = Peak(extrema_arr[i - 1], extrema, extrema_arr[i + 1])
+            peaks_arr.append(peak)
 
     return np.array(peaks_arr)
 
 
-def filter_peaks(peaks_arr):
-    return np.where([item.is_good() for item in peaks_arr], peaks_arr)
+def filter_peaks(peaks_arr, threshold):
+
+    arr = []
+
+    for peak in peaks_arr:
+        if peak.is_good(threshold):
+            arr.append(peak)
+
+    return arr
+
+    # return np.where([item.is_good(threshold) for item in peaks_arr], peaks_arr)
 
 
 def plot_peaks(data, peaks_arr, filename, plot_boxes=False):
@@ -79,16 +89,42 @@ def plot_peaks(data, peaks_arr, filename, plot_boxes=False):
                 plt.plot([peak.left_min_extrema.x, peak.right_min_extrema.x],
                          [peak.max_extrema.y - 0.1, peak.max_extrema.y - 0.1], color="black")
 
-    plt.savefig(filename, dpi=400)
-    plt.show()
+def split_peaks_by_slices(peaks_arr, slice_len_in_steps, count_slices):
+    splitted_arr = [[] for _ in range(count_slices)]
+
+    i = 0
+    current_slice = slice_len_in_steps
+    current_num_slice = 0
+    while current_num_slice < count_slices:
+        if peaks_arr[i].left_min_extrema.x < current_slice:
+            splitted_arr[current_num_slice].append(peaks_arr[i])
+            i += 1
+        else:
+            current_slice += slice_len_in_steps
+            current_num_slice += 1
+
+    return splitted_arr
 
 
 if __name__ == "__main__":
-    # gras_data = smooth(read_data("../gras_data/0_MN_E_left.dat")[:4400])
-    # gras_data = norma(smooth(read_data("../gras_data/vm.txt")[:1500]))
-    gras_data = smooth(norma(read_hdf5("../bio_data/bio_E_PLT_21cms_40Hz_2pedal_0.1step.hdf5")[0][:400]))
-    # gras_data = read_hdf5("../bio_data/bio_E_PLT_21cms_40Hz_2pedal_0.1step.hdf5")[0][:400]
-    peaks = find_peaks(gras_data)
-    peaks = filter_peaks(peaks)
+    smoothed_gras_data = smooth(norma(read_hdf5("../bio_data/bio_E_PLT_21cms_40Hz_2pedal_0.1step.hdf5")[0][530:780]))
+    peaks = find_peaks(smoothed_gras_data)
+    peaks = filter_peaks(peaks, 0.01)
 
-    plot_peaks(gras_data, peaks, "filtered_peaks.png")
+    # splitted = split_peaks_by_slices(peaks, 25 * 4, 6)
+
+    plt.subplot(311)
+    plt.title("a")
+    gras_data = norma(read_hdf5("../bio_data/bio_E_PLT_21cms_40Hz_2pedal_0.1step.hdf5")[0][530:780])
+
+    plot_peaks(gras_data, find_peaks(gras_data), "all_peaks.png")
+    plt.subplot(312)
+    plt.title("b")
+    plot_peaks(smoothed_gras_data, peaks, "all_peaks.png")
+
+    plt.subplot(313)
+    plt.title("c")
+    plot_peaks(smoothed_gras_data, peaks, "all_peaks.png", True)
+
+    plt.savefig("comaring.png", dpi=400)
+    plt.show()

@@ -3,9 +3,13 @@ class Peak:
         self.left_min_extrema = left_min_extrema
         self.max_extrema = max_extrema
         self.right_min_extrema = right_min_extrema
+        self.ampl = max(abs(left_min_extrema.y - max_extrema.y), abs(right_min_extrema.y - max_extrema.y))
+        self.time_of = max_extrema.x
+        self.duration = right_min_extrema.x - left_min_extrema.x
 
     def __repr__(self):
-        return f"({self.left_min_extrema.x}, {self.left_min_extrema.y}) ({self.max_extrema.x}, {self.max_extrema.y}) ({self.right_min_extrema.x}, {self.right_min_extrema.y})"
+        return f"{self.left_min_extrema}, {self.max_extrema}, {self.right_min_extrema}"
 
-    def is_good(self, threshold_y, threshold_x):
-        return abs(self.left_min_extrema.y - self.max_extrema.y) > threshold_y and abs(self.right_min_extrema.y - self.max_extrema.y) > threshold_y
+    def is_good(self, threshold_y):
+        return abs(self.left_min_extrema.y - self.max_extrema.y) > threshold_y \
+               and abs(self.right_min_extrema.y - self.max_extrema.y) > threshold_y
