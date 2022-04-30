@@ -1,0 +1,54 @@
+<html lang="en">
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"
+            integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+            crossorigin="anonymous"></script>
+
+    <div>
+    <h3>Messages</h3>
+</div>
+
+<div>
+    <ul id="messagesList">
+
+    </ul>
+</div>
+
+<script>
+    var webSocket;
+    function connect() {
+        webSocket = new WebSocket('ws://0.0.0.0:8080');
+
+        webSocket.onmessage = function receiveMessage(response) {
+            console.log("message")
+            $('#messagesList').first().after("<li>" + response.data + "</li>");
+        }
+    }
+
+    connect()
+
+//     // Create WebSocket connection.
+// const socket = new WebSocket('ws://0.0.0.0:8080');
+//
+// // Connection opened
+// socket.addEventListener('open', function (event) {
+//     // socket.send('Hello Server!');
+//     console.log("Connection opened")
+// });
+//
+// socket.onmessage = function(s) {
+//     console.log("New message")
+// };
+
+// // Listen for messages
+// socket.addEventListener('message', function (event) {
+//     console.log('Message from server ', event.data);
+// });
+//
+// onmessage = event => {
+//     console.log("kek")
+// }
+
+
+</script>
+
+</html>
