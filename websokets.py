@@ -1,13 +1,26 @@
 import asyncio
 import websockets
+import random
+from threading import Thread
 
 
-async def time(websocket, path):
-    while True:
-        await websocket.send("hello")
-        await asyncio.sleep(1)
+class ChartUpdater(Thread):
+    def __init__(self, address, port):
+        super().__init__()
+        self.start_server = websockets.serve(self.update_chart, address, port)
+        self.data = None
 
-start_server = websockets.serve(time, '0.0.0.0', 8080)
+    async def update_chart(self, websocket, path):
+        while True:
+            if self.data is None:
+                await websocket.send(str(random.randint(0, 50)))
+            await asyncio.sleep(3)
 
-asyncio.get_event_loop().run_until_complete(start_server)
-asyncio.get_event_loop().run_forever()
+    def start(self) -> None:
+        asyncio.get_event_loop().run_until_complete(self.start_server)
+        asyncio.get_event_loop().run_forever()
+
+
+if __name__ == "__main__":
+    chart_updater = ChartUpdater("0.0.0.0", 8080)
+    chart_updater.start()
