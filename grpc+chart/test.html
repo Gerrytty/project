@@ -1,0 +1,100 @@
+<html lang="en">
+  <head>
+    <title>Title</title></head>
+  <body>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <div class="container">
+      
+      <div class="chartContainer">
+
+        <style>
+          .chartContainer {
+            width: 1000px;
+            height:600px
+          }
+        </style>
+
+        <canvas id="chartCanvas"></canvas>
+
+        <script>
+          var ctx = document.getElementById('chartCanvas').getContext('2d');
+          window.onload = function () {
+
+            window.myChart = new Chart(ctx, {
+              labels: [],
+              type: 'line',
+              data: {
+                datasets: [{
+                  label: 'Error func',
+                  borderColor: 'rgb(75, 192, 192)',
+                  data: []
+                },
+                {
+                  type: 'line',
+                  label: 'Contour of Error func',
+                  borderColor: 'rgb(200,19,73)',
+                  data: [],
+                }]
+              }
+            });
+          }
+
+          var webSocket;
+
+          let currentX = 0;
+
+          function connect() {
+            webSocket = new WebSocket('ws://172.20.10.5:8081');
+
+            webSocket.onmessage = function receiveMessage(response) {
+
+              console.log("New message from server " + response.data + " " + currentX)
+
+              // append the new data to the existing chart data
+              myChart.data.datasets[0].data.push({
+                x: currentX,
+                y: parseInt(response.data)
+              });
+
+              myChart.data.labels.push(currentX);
+
+              currentX += 1
+
+              // update chart datasets keeping the current animation
+              myChart.update({preservation: true});
+        }
+    }
+
+    connect()
+
+          function contour() {
+
+            let prevMax = myChart.data.datasets[0].data[0].y;
+
+            for (let step = 0; step < currentX; step++) {
+              let valY = myChart.data.datasets[0].data[step].y
+              if (valY >= prevMax) {
+                prevMax = valY
+                myChart.data.datasets[1].data.push({x: step, y: prevMax})
+              }
+            }
+
+            myChart.update({preservation: true});
+
+          }
+
+        </script>
+
+      </div>
+
+      <div>
+        <button onclick=contour()>Contour plot</button>
+      </div>
+
+    </div>
+    
+  </body>
+  
+</html>
